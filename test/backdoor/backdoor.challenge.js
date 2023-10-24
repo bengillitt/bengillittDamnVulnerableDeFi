@@ -47,7 +47,7 @@ describe("[Challenge] Backdoor", function () {
 
   it("Execution", async function () {
     /** CODE YOUR SOLUTION HERE */
-    const walletAddress = await walletRegistry.masterCopy();
+    const masterCopy = await walletRegistry.masterCopy();
     const AttackerContractFactory = await ethers.getContractFactory(
       "AttackBackdoor",
       deployer
@@ -56,8 +56,9 @@ describe("[Challenge] Backdoor", function () {
       token.address,
       walletFactory.address,
       walletRegistry.address,
-      walletAddress
+      masterCopy
     );
+
     await AttackContract.attack();
 
     console.log(walletAddress);

