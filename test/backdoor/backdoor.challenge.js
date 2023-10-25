@@ -59,9 +59,9 @@ describe("[Challenge] Backdoor", function () {
       masterCopy
     );
 
-    await AttackContract.attack();
+    await AttackContract.attack(users);
 
-    console.log(walletAddress);
+    console.log(await token.balanceOf(users[0]));
   });
 
   after(async function () {
