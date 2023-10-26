@@ -54,14 +54,16 @@ describe("[Challenge] Backdoor", function () {
     );
     const AttackContract = await AttackerContractFactory.deploy(
       token.address,
-      walletFactory.address,
       walletRegistry.address,
+      walletFactory.address,
       masterCopy
     );
 
-    await AttackContract.attack(users);
+    await AttackContract.connect(player).attack(users);
 
-    console.log(await token.balanceOf(users[0]));
+    console.log(
+      (await token.balanceOf(player.address)) / ethers.utils.parseEther("1")
+    );
   });
 
   after(async function () {
