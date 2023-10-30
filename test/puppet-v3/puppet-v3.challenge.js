@@ -201,10 +201,24 @@ describe("[Challenge] Puppet v3", function () {
     );
 
     const AttackContract = await AttackContractFactory.deploy(
-      lendingPool.address
+      lendingPool.address,
+      token.address
     );
 
-    AttackContract.attack(LENDING_POOL_INITIAL_TOKEN_BALANCE);
+    console.log(
+      (await token.balanceOf(player.address)) / ethers.utils.parseEther("1")
+    );
+
+    await token
+      .connect(player)
+      .approve(AttackContract.address, PLAYER_INITIAL_TOKEN_BALANCE);
+
+    await AttackContract.connect(player).attack(
+      LENDING_POOL_INITIAL_TOKEN_BALANCE,
+      {
+        value: ethers.utils.parseEther("0.5"),
+      }
+    );
   });
 
   after(async function () {
